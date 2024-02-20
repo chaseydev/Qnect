@@ -12,7 +12,7 @@ function FormPage() {
     emailAddress: '',
     urlLink: ''
   });
-  const [showImage, setShowImage] = useState(false);
+  const [qrCodeImage, setQRCodeImage] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
@@ -27,20 +27,22 @@ function FormPage() {
     setError(null);
 
     try {
-      console.log(formData)
-      const response = await axios.post('generate-contact-qr/', formData);
-      console.log(response.data);
-      // Handle success, e.g., show a success message
+      const response = await axios.post('generate-contact-qr/', formData, {
+        responseType: 'arraybuffer' // Ensure the response is received as binary data
+      });
+      const base64Image = btoa(
+        new Uint8Array(response.data).reduce(
+          (data, byte) => data + String.fromCharCode(byte),
+          ''
+        )
+      );
+      setQRCodeImage(`data:image/png;base64,${base64Image}`);
     } catch (error) {
       console.error('Error submitting form:', error);
       setError('An error occurred while submitting the form. Please try again.');
     } finally {
       setSubmitting(false);
     }
-  };
-
-  const toggleImage = () => {
-    setShowImage(!showImage);
   };
 
   return (
@@ -82,7 +84,6 @@ function FormPage() {
                 name="emailAddress"
                 value={formData.emailAddress}
                 onChange={handleChange}
-                required
               />
             </div>
             <div className="mb-3">
@@ -94,7 +95,6 @@ function FormPage() {
                 name="urlLink"
                 value={formData.urlLink}
                 onChange={handleChange}
-                required
               />
             </div>
             <button type="submit" className="btn btn-primary">Submit</button>
@@ -102,14 +102,11 @@ function FormPage() {
         </div>
         <div className="col-md-6">
           <div className="mt-4">
-            <button className="btn btn-secondary" onClick={toggleImage}>
-              {showImage ? 'Hide Image' : 'Show Image'}
-            </button>
-            {showImage && (
-              <div className="mt-3">
-                <img src="path_to_your_image.jpg" alt="Your Image" />
-              </div>
-            )}
+            <div className="mt-3">
+              {qrCodeImage && (
+                <img src={qrCodeImage} alt="QR Code" />
+              )}
+            </div>
           </div>
         </div>
       </div>
